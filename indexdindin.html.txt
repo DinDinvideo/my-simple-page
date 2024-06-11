@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Name - Personal Webpage</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        h1 {
+            font-size: 36px;
+            margin-bottom: 10px;
+        }
+
+        p {
+            font-size: 18px;
+            line-height: 1.6;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 50px;
+            padding-top: 20px;
+            border-top: 1px solid #ccc;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>Your Name</h1>
+            <p>Welcome to my personal webpage</p>
+        </header>
+        <section>
+            <h2>About Me</h2>
+            <p>This is where you can introduce yourself. Talk about your interests, skills, and anything else you'd like
+                visitors to know.</p>
+        </section>
+        <section>
+            <h2>Projects</h2>
+            <p>Here you can showcase any projects you've worked on. Include descriptions, images, and links if
+                applicable.</p>
+        </section>
+        <section>
+            <h2>Contact Me</h2>
+            <p>Feel free to reach out to me! You can provide your email address, social media links, or a contact
+                form.</p>
+        </section>
+        <footer>
+            <p>&copy; 2024 Your Name. All rights reserved.</p>
+        </footer>
+    </div>
+</body>
+
+</html>
