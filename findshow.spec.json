@@ -1,0 +1,257 @@
+{
+  "version": "1.0.0",
+  "generated_at": "2025-10-11T00:00:00Z",
+  "project": {
+    "name": "FindShow",
+    "tagline": "Smart Lost & Found System",
+    "mascot": "Scoucou",
+    "description": "A multilingual (French-English) PWA that helps schools, families, and facilitators track, identify, and return lost items efficiently and ethically.",
+    "purpose": "Create a secure, easy-to-use, and privacy-respecting ecosystem for managing lost items in schools — combining QR/barcode scanning, parent notification, and emotional storytelling.",
+    "languages": ["en", "fr"],
+    "pwa": true
+  },
+  "actors": [
+    {
+      "id": "school_staff",
+      "label": { "en": "School/Staff", "fr": "École/Personnel" },
+      "capabilities": [
+        "Register found items",
+        "Scan labels (QR/barcode/scribble)",
+        "Update delivery status",
+        "Manage lost & found dashboard"
+      ]
+    },
+    {
+      "id": "parents",
+      "label": { "en": "Parents", "fr": "Parents" },
+      "capabilities": [
+        "View and claim found items",
+        "Request labels",
+        "Receive notifications",
+        "Donate unclaimed items"
+      ]
+    },
+    {
+      "id": "facilitators",
+      "label": { "en": "Facilitators (animators)", "fr": "Animateurs" },
+      "capabilities": [
+        "Help scan, tag, and match items with owners safely"
+      ]
+    }
+  ],
+  "tech_stack": {
+    "frontend": ["HTML5", "CSS3", "Vanilla JS (PWA)"],
+    "backend": "Supabase (PostgreSQL + Realtime API)",
+    "storage": "Supabase Storage (scribbles, label images)",
+    "notifications": {
+      "email": { "immediate": true },
+      "reminder": { "after_hours": 24 },
+      "sms_fallback": { "after_hours": 48, "credit_based": true }
+    },
+    "design": "Responsive, minimal, child-friendly"
+  },
+  "database": {
+    "engine": "supabase_postgres",
+    "tables": [
+      {
+        "name": "parents",
+        "columns": [
+          { "name": "id", "type": "uuid", "primary_key": true, "default": "uuid_generate_v4()" },
+          { "name": "email", "type": "text", "nullable": false },
+          { "name": "phone", "type": "text", "nullable": true },
+          { "name": "created_at", "type": "timestamptz", "nullable": false, "default": "now()" }
+        ],
+        "indexes": [
+          { "name": "parents_email_key", "unique": true, "columns": ["email"] }
+        ]
+      },
+      {
+        "name": "children",
+        "columns": [
+          { "name": "id", "type": "uuid", "primary_key": true, "default": "uuid_generate_v4()" },
+          { "name": "parent_id", "type": "uuid", "nullable": false, "references": { "table": "parents", "column": "id", "on_delete": "cascade" } },
+          { "name": "name", "type": "text", "nullable": false },
+          { "name": "class", "type": "text", "nullable": true },
+          { "name": "created_at", "type": "timestamptz", "nullable": false, "default": "now()" }
+        ],
+        "indexes": [ { "name": "children_parent_id_idx", "columns": ["parent_id"] } ]
+      },
+      {
+        "name": "label_orders",
+        "columns": [
+          { "name": "id", "type": "uuid", "primary_key": true, "default": "uuid_generate_v4()" },
+          { "name": "parent_id", "type": "uuid", "nullable": false, "references": { "table": "parents", "column": "id", "on_delete": "cascade" } },
+          { "name": "label_type", "type": "text", "nullable": false, "allowed_values": ["qr", "barcode", "scribble"] },
+          { "name": "quantity", "type": "int", "nullable": false },
+          { "name": "status", "type": "text", "nullable": false, "allowed_values": ["pending", "printed", "delivered"] },
+          { "name": "created_at", "type": "timestamptz", "nullable": false, "default": "now()" }
+        ],
+        "indexes": [ { "name": "label_orders_parent_id_idx", "columns": ["parent_id"] } ]
+      },
+      {
+        "name": "lost_items",
+        "columns": [
+          { "name": "id", "type": "uuid", "primary_key": true, "default": "uuid_generate_v4()" },
+          { "name": "label_code", "type": "text", "nullable": false },
+          { "name": "found_by", "type": "uuid", "nullable": true, "references": { "schema": "auth", "table": "users", "column": "id", "on_delete": "restrict" } },
+          { "name": "found_at", "type": "timestamptz", "nullable": false, "default": "now()" },
+          { "name": "location", "type": "text", "nullable": true },
+          { "name": "notes", "type": "text", "nullable": true },
+          { "name": "delivered", "type": "boolean", "nullable": false, "default": false },
+          { "name": "delivered_at", "type": "timestamptz", "nullable": true }
+        ],
+        "indexes": [
+          { "name": "lost_items_label_code_idx", "columns": ["label_code"], "unique": true },
+          { "name": "lost_items_found_by_idx", "columns": ["found_by"] }
+        ]
+      }
+    ],
+    "notes": [
+      "Ownership resolution for label_code must map to a parent/child outside of this minimal schema (e.g., via pre-assigned codes stored with parents or an external registry)."
+    ]
+  },
+  "features": {
+    "smart_label_system": {
+      "label_types": ["qr", "barcode", "scribble"],
+      "scan_event": {
+        "actor": "school_staff",
+        "input": "label_code",
+        "side_effects": ["create lost_items record", "trigger notification"],
+        "privacy": "Signal is private to the owner"
+      }
+    },
+    "notification_flow": {
+      "acknowledgement_logic": {
+        "definition": "Acknowledged when parent visits secure link or staff marks delivered",
+        "source": "event log / deep-link token validation"
+      },
+      "triggers": [
+        {
+          "id": "immediate_email",
+          "event": "lost_item.created",
+          "channel": "email",
+          "template_id": "found_item_email",
+          "delay_minutes": 0
+        },
+        {
+          "id": "reminder_email_24h",
+          "event": "lost_item.unacknowledged",
+          "channel": "email",
+          "template_id": "found_item_reminder",
+          "delay_minutes": 1440,
+          "conditions": ["lost_items.delivered = false"]
+        },
+        {
+          "id": "sms_fallback_48h",
+          "event": "lost_item.unacknowledged",
+          "channel": "sms",
+          "template_id": "found_item_sms",
+          "delay_minutes": 2880,
+          "conditions": ["lost_items.delivered = false", "parents.phone IS NOT NULL"]
+        }
+      ]
+    },
+    "scribble_recognition": {
+      "grid_size": [125, 125],
+      "orientation": "Corner markers for orientation detection",
+      "binary_matrix": "Thresholded black/white matrix",
+      "hash": "Stable, reproducible hash of matrix",
+      "storage": { "image_bucket": "scribbles", "matrix_format": "RLE or JSON" }
+    },
+    "dashboards": {
+      "school": {
+        "lists": ["all_found_items"],
+        "statistics": ["found_vs_returned", "average_return_time", "item_categories"],
+        "exports": ["weekly_report"]
+      },
+      "parent": {
+        "views": ["found_items_for_children", "label_requests"],
+        "actions": ["donate_unclaimed_items"]
+      }
+    },
+    "privacy_ethics": [
+      "No public tracking of owners or children.",
+      "Only verified staff can scan and send notifications.",
+      "Location data stored only once per scan."
+    ],
+    "user_flow": [
+      "Parent registers → Receives unique labels",
+      "Label attached to items → Staff scans label",
+      "System notifies parent",
+      "Parent confirms → School marks delivered",
+      "Unclaimed items after X days → Donated"
+    ]
+  },
+  "ui": {
+    "routes": [
+      { "id": "home", "path": "/", "public": true },
+      { "id": "scan", "path": "/scan", "roles": ["school_staff", "facilitators"], "features": ["camera_access", "qr_barcode_scan", "scribble_upload"] },
+      { "id": "school_dashboard", "path": "/school", "roles": ["school_staff"], "features": ["items_list", "stats", "export"] },
+      { "id": "parent_dashboard", "path": "/parent", "roles": ["parents"], "features": ["my_items", "label_orders", "donation"] },
+      { "id": "i18n_toggle", "component": "header_locale_switch" }
+    ]
+  },
+  "notifications": {
+    "channels": ["email", "sms"],
+    "email": {
+      "provider": "supabase_function_or_external",
+      "templates": {
+        "en": {
+          "found_item_subject": "We found an item for {{childName}}",
+          "found_item_body": "An item labeled {{labelCode}} was found at {{location}} on {{foundAt}}. View details: {{url}}"
+        },
+        "fr": {
+          "found_item_subject": "Nous avons trouvé un objet pour {{childName}}",
+          "found_item_body": "Un objet étiqueté {{labelCode}} a été trouvé à {{location}} le {{foundAt}}. Voir les détails : {{url}}"
+        }
+      }
+    },
+    "sms": {
+      "enabled": true,
+      "templates": {
+        "en": "FindShow: an item for {{childName}} was found at {{location}}. Link: {{url}}",
+        "fr": "FindShow : un objet pour {{childName}} a été trouvé à {{location}}. Lien : {{url}}"
+      }
+    }
+  },
+  "i18n": {
+    "default": "en",
+    "supported": ["en", "fr"],
+    "strings": {
+      "en": {
+        "app.title": "FindShow",
+        "nav.scan": "Scan",
+        "nav.school": "School",
+        "nav.parent": "Parent",
+        "action.markDelivered": "Mark delivered",
+        "action.donate": "Donate unclaimed"
+      },
+      "fr": {
+        "app.title": "FindShow",
+        "nav.scan": "Scanner",
+        "nav.school": "École",
+        "nav.parent": "Parent",
+        "action.markDelivered": "Marquer comme livré",
+        "action.donate": "Donner (non réclamé)"
+      }
+    }
+  },
+  "deliverables": [
+    "Fully working PWA (offline capable)",
+    "Responsive UI for mobile/desktop",
+    "Supabase integration (CRUD)",
+    "Multi-language interface (EN/FR)",
+    "Basic notification engine (email/SMS)",
+    "Optional AI recognition (scribble code)"
+  ],
+  "acceptance_criteria": [
+    "App installs and runs as PWA; core routes available offline",
+    "Staff can scan a label and create lost_items records",
+    "Immediate email notification upon scan",
+    "24-hour reminder email if unacknowledged",
+    "48-hour SMS fallback if phone present and still unacknowledged",
+    "School dashboard shows found vs returned, average time, and export works",
+    "Parent dashboard lists items and handles label requests",
+    "Language toggle switches EN/FR across UI"
+  ]
+}
