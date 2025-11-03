@@ -1,0 +1,12 @@
+{
+  "name": "FindShow • Démo",
+  "short_name": "FindShow",
+  "start_url": "/my-simple-page/",
+  "scope": "/my-simple-page/",
+  "display": "standalone",
+  "background_color": "#f4efe6",
+  "theme_color": "#f4efe6",
+  "lang": "fr",
+  "dir": "ltr",
+  "icons": []
+}
