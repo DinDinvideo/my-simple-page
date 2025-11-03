@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>FindShow • Démo</title>
+  <meta name="theme-color" content="#f4efe6" />
+  <link rel="manifest" href="manifest.json" />
+  <style>
+    :root{--bg:#f4efe6;--ink:#1c1c1c;--brand:#ff7a00}
+    *{box-sizing:border-box} body{margin:0;font:16px/1.5 system-ui,Segoe UI,Roboto;
+    background:var(--bg);color:var(--ink)}
+    header{padding:14px 18px;border-bottom:1px solid #ddd;display:flex;gap:10px;align-items:center;justify-content:space-between}
+    .brand{font-weight:700;color:var(--brand)} main{padding:18px;max-width:880px;margin:auto}
+    .card{background:#fff;border:1px solid #e7e2d8;border-radius:14px;padding:16px;margin:12px 0}
+    button{border:0;border-radius:10px;padding:10px 14px;background:var(--brand);color:#fff;font-weight:600}
+    .muted{color:#666}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">FindShow</div>
+    <div>
+      <select id="lang">
+        <option value="fr" selected>FR</option>
+        <option value="en">EN</option>
+      </select>
+    </div>
+  </header>
+
+  <main>
+    <h1 id="t-title">Bienvenue 👋</h1>
+    <p class="muted" id="t-desc">
+      Ceci est une démo simple (PWA) pour tester l’interface et l’internationalisation.
+    </p>
+
+    <div class="card">
+      <h3 id="t-cta">Commencer</h3>
+      <p id="t-cta-desc">
+        Installez l’appli (Ajouter à l’écran d’accueil) puis testez.
+      </p>
+      <button id="btn-say">👋</button>
+    </div>
+
+    <div class="card">
+      <h3>Statut</h3>
+      <pre id="status" class="muted">Service worker: (en attente)</pre>
+    </div>
+  </main>
+
+  <script>
+    // i18n mini
+    const strings = {
+      fr: {
+        title: "Bienvenue 👋",
+        desc: "Ceci est une démo simple (PWA) pour tester l’interface et l’internationalisation.",
+        cta: "Commencer",
+        ctaDesc: "Installez l’appli (Ajouter à l’écran d’accueil) puis testez.",
+        hello: "Coucou !"
+      },
+      en: {
+        title: "Welcome 👋",
+        desc: "This is a simple PWA demo to test the UI and i18n.",
+        cta: "Get started",
+        ctaDesc: "Install to Home Screen and try it.",
+        hello: "Hello!"
+      }
+    };
+    const langSel = document.getElementById('lang');
+    const apply = l=>{
+      const t=strings[l]||strings.fr;
+      document.getElementById('t-title').textContent=t.title;
+      document.getElementById('t-desc').textContent=t.desc;
+      document.getElementById('t-cta').textContent=t.cta;
+      document.getElementById('t-cta-desc').textContent=t.ctaDesc;
+      document.getElementById('btn-say').onclick=()=>alert(t.hello);
+    };
+    langSel.onchange=()=>apply(langSel.value);
+    apply(langSel.value);
+
+    // Register service worker (for offline)
+    const st = document.getElementById('status');
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./service-worker.js')
+        .then(reg => st.textContent = 'Service worker: registered')
+        .catch(err => st.textContent = 'Service worker error: '+err);
+    } else {
+      st.textContent = 'Service worker: not supported';
+    }
+  </script>
+</body>
+</html>
